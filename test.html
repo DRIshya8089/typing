@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Typing Speed Tester (30s)</title>
+  <style>
+    body { font-family: Arial, sans-serif; display:flex; flex-direction:column;
+           align-items:center; justify-content:center; height:100vh;
+           background:#f0f4f8; margin:0; padding:20px; }
+    .container { background:white; padding:20px; border-radius:8px;
+                 box-shadow:0 4px 12px rgba(0,0,0,0.08); width:90%; max-width:460px; }
+    h1 { margin:0 0 12px 0; font-size:1.25rem; }
+    textarea { width:100%; height:140px; resize:none; font-size:1rem;
+               padding:8px; margin-bottom:10px; border-radius:6px; border:1px solid #d1d5db; }
+    .controls { display:flex; gap:10px; margin-bottom:10px; }
+    button { flex:1; padding:10px; font-size:1rem; cursor:pointer;
+             border:0; border-radius:6px; color:white; }
+    button#start { background:#16a34a; }
+    button#restart { background:#0284c7; opacity:0.95; }
+    .stats { font-size:1rem; color:#111827; }
+    .timer { font-weight:700; margin-left:auto; color:#0f172a; }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <h1>Typing Speed Tester — 30 seconds</h1>
+      <div class="timer" id="timerDisplay">30s</div>
+    </div>
+
+    <textarea id="inputArea" placeholder="Type here..." disabled aria-label="typing input"></textarea>
+
+    <div class="controls">
+      <button id="start">Start 30s Test</button>
+      <button id="restart" disabled>Restart</button>
+    </div>
+
+    <div class="stats" id="stats">Words: 0 | WPM: 0</div>
+  </div>
+
+  <script>
+    // Elements & config
+    const input = document.getElementById('inputArea');
+    const startBtn = document.getElementById('start');
+    const restartBtn = document.getElementById('restart');
+    const stats = document.getElementById('stats');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const TEST_DURATION = 30; // seconds
+
+    let timerId = null;
+    let endTime = null;
+    let tickInterval = null;
+
+    // Update shown stats (word count and estimated WPM)
+    function updateStats() {
+      const text = input.value.trim();
+      const wordCount = text ? text.split(/\s+/).length : 0;
+      const wpm = Math.round(wordCount * (60 / TEST_DURATION));
+      // <-- Correct: use unescaped template literal (backticks) OR use concatenation.
+      stats.textContent = `Words: ${wordCount} | WPM: ${wpm}`;
+    }
+
+    // Update countdown timer display every 200 ms
+    function updateTimerDisplay() {
+      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      timerDisplay.textContent = `${remaining}s`;
+      if (remaining <= 0) {
+        clearInterval(tickInterval);
+      }
+    }
+
+    function startTest() {
+      // prepare
+      input.disabled = false;
+      input.value = '';
+      input.focus();
+      startBtn.disabled = true;
+      restartBtn.disabled = true;
+      stats.textContent = 'Words: 0 | WPM: 0';
+      timerDisplay.textContent = `${TEST_DURATION}s`;
+
+      // set end time and timers
+      endTime = Date.now() + TEST_DURATION * 1000;
+      timerId = setTimeout(endTest, TEST_DURATION * 1000);
+      // frequent UI update for countdown
+      tickInterval = setInterval(updateTimerDisplay, 200);
+
+      // start listening for input
+      input.addEventListener('input', updateStats);
+    }
+
+    function endTest() {
+      // stop timers and input
+      clearTimeout(timerId);
+      clearInterval(tickInterval);
+      input.removeEventListener('input', updateStats);
+      input.disabled = true;
+      startBtn.disabled = false;
+      restartBtn.disabled = false;
+      updateStats(); // final stats
+      timerDisplay.textContent = '0s';
+    }
+
+    // Restart sets everything back (user can start again)
+    function restartLocal() {
+      clearTimeout(timerId);
+      clearInterval(tickInterval);
+      input.value = '';
+      input.disabled = true;
+      startBtn.disabled = false;
+      restartBtn.disabled = true;
+      stats.textContent = 'Words: 0 | WPM: 0';
+      timerDisplay.textContent = `${TEST_DURATION}s`;
+    }
+
+    // wire buttons
+    startBtn.addEventListener('click', startTest);
+    restartBtn.addEventListener('click', restartLocal);
+  </script>
+</body>
+</html>
